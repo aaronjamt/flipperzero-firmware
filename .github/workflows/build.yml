@@ -10,21 +10,19 @@ on:
 
 env:
   DEFAULT_TARGET: f7
-  FBT_TOOLCHAIN_PATH: /runner/_work
   FBT_GIT_SUBMODULE_SHALLOW: 1
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  main:
-    runs-on: [self-hosted, FlipperZeroShell]
+  build:
+    permissions:
+      issues: write
+      pull-requests: write
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        target: [f7, f18]
+        target: [f7]
     steps:
-      - name: 'Wipe workspace'
-        run: find ./ -mount -maxdepth 1 -exec rm -rf {} \;
-
       - name: 'Checkout code'
         uses: actions/checkout@v4
         with:
@@ -73,15 +71,11 @@ jobs:
       - name: 'Copy build output'
         run: |
           set -e
-          rm -rf artifacts map_analyser_files || true
-          mkdir artifacts map_analyser_files
-          cp dist/${TARGET}-*/* artifacts/ || true
+          rm -rf artifacts || true
+          mkdir artifacts
+          cp dist/${TARGET}-*/flipper-z-${TARGET}-{update-*.tgz,sdk-*.zip,full-*.dfu} artifacts/
           tar czpf "artifacts/flipper-z-${TARGET}-resources-${SUFFIX}.tgz" \
             -C build/latest resources
-          tar czpf "artifacts/flipper-z-${TARGET}-debugapps-${SUFFIX}.tgz" \
-            -C dist/${TARGET}-*/apps/Debug .
-          tar czpf "artifacts/flipper-z-${TARGET}-appsymbols-${SUFFIX}.tgz" \
-            -C dist/${TARGET}-*/debug_elf .
 
       - name: 'Copy universal artifacts'
         if: ${{ !github.event.pull_request.head.repo.fork && matrix.target == env.DEFAULT_TARGET }}
@@ -98,18 +92,6 @@ jobs:
               -F "version_token=${COMMIT_SHA}" \
               ${FILES[@]} \
               "${{ secrets.INDEXER_URL }}"/firmware/uploadfiles
-
-      - name: 'Copy & analyse map analyser files'
-        if: ${{ !github.event.pull_request.head.repo.fork && matrix.target == env.DEFAULT_TARGET }}
-        run: |
-          cp build/${DEFAULT_TARGET}-firmware-*/firmware.elf.map map_analyser_files/firmware.elf.map
-          cp build/${DEFAULT_TARGET}-firmware-*/firmware.elf map_analyser_files/firmware.elf
-          source scripts/toolchain/fbtenv.sh
-          python3 scripts/map_analyse_upload.py \
-              "--elf_file=map_analyser_files/firmware.elf" \
-              "--map_file=map_analyser_files/firmware.elf.map" \
-              "--analyser_url=${{ secrets.ANALYSER_URL }}" \
-              "--analyser_token=${{ secrets.ANALYSER_TOKEN }}";
 
       - name: 'Find previous comment'
         if: ${{ !github.event.pull_request.head.repo.fork && matrix.target == env.DEFAULT_TARGET && github.event.pull_request }}
@@ -128,28 +110,27 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             **Compiled ${{ matrix.target }} firmware for commit `${{steps.names.outputs.commit_sha}}`:**
-            - [📦 Update package](https://update.flipperzero.one/builds/firmware/${{steps.names.outputs.branch_name}}/flipper-z-${{steps.names.outputs.default_target}}-update-${{steps.names.outputs.suffix}}.tgz)
-            - [📥 DFU file](https://update.flipperzero.one/builds/firmware/${{steps.names.outputs.branch_name}}/flipper-z-${{steps.names.outputs.default_target}}-full-${{steps.names.outputs.suffix}}.dfu)
-            - [☁️ Web/App updater](https://lab.flipper.net/?url=https://update.flipperzero.one/builds/firmware/${{steps.names.outputs.branch_name}}/flipper-z-${{steps.names.outputs.default_target}}-update-${{steps.names.outputs.suffix}}.tgz&channel=${{steps.names.outputs.branch_name}}&version=${{steps.names.outputs.commit_sha}})
-            - [📊 Size report](https://fw-reports.flipp.dev/?branch=${{steps.names.outputs.branch_name}})
+            - [📦 Update package](https://update.encore-zero.dev/builds/firmware/${{steps.names.outputs.branch_name}}/flipper-z-${{steps.names.outputs.default_target}}-update-${{steps.names.outputs.suffix}}.tgz)
+            - [📥 DFU file](https://update.encore-zero.dev/builds/firmware/${{steps.names.outputs.branch_name}}/flipper-z-${{steps.names.outputs.default_target}}-full-${{steps.names.outputs.suffix}}.dfu)
+            - [☁️ Web/App updater](https://lab.flipper.net/?url=https://update.encore-zero.dev/builds/firmware/${{steps.names.outputs.branch_name}}/flipper-z-${{steps.names.outputs.default_target}}-update-${{steps.names.outputs.suffix}}.tgz&channel=${{steps.names.outputs.branch_name}}&version=${{steps.names.outputs.commit_sha}})
           edit-mode: replace
 
-      - name: 'SDK submission to staging catalog'
-        if: ${{ steps.names.outputs.event_type == 'tag' && matrix.target == env.DEFAULT_TARGET }}
-        uses: ./.github/actions/submit_sdk
-        with:
-          catalog-url: ${{ secrets.CATALOG_STAGING_URL }}
-          catalog-api-token: ${{ secrets.CATALOG_STAGING_API_TOKEN }}
-          firmware-api: ${{ steps.build-fw.outputs.firmware_api }}
-          firmware-target: ${{ matrix.target }}
-          firmware-version: ${{ steps.names.outputs.suffix }}
+      # - name: 'SDK submission to staging catalog'
+      #   if: ${{ steps.names.outputs.event_type == 'tag' && matrix.target == env.DEFAULT_TARGET }}
+      #   uses: ./.github/actions/submit_sdk
+      #   with:
+      #     catalog-url: ${{ secrets.CATALOG_STAGING_URL }}
+      #     catalog-api-token: ${{ secrets.CATALOG_STAGING_API_TOKEN }}
+      #     firmware-api: ${{ steps.build-fw.outputs.firmware_api }}
+      #     firmware-target: ${{ matrix.target }}
+      #     firmware-version: ${{ steps.names.outputs.suffix }}
 
-      - name: 'SDK submission to prod catalog'
-        if: ${{ steps.names.outputs.event_type == 'tag' && matrix.target == env.DEFAULT_TARGET }}
-        uses: ./.github/actions/submit_sdk
-        with:
-          catalog-url: ${{ secrets.CATALOG_URL }}
-          catalog-api-token: ${{ secrets.CATALOG_API_TOKEN }}
-          firmware-api: ${{ steps.build-fw.outputs.firmware_api }}
-          firmware-target: ${{ matrix.target }}
-          firmware-version: ${{ steps.names.outputs.suffix }}
+      # - name: 'SDK submission to prod catalog'
+      #   if: ${{ steps.names.outputs.event_type == 'tag' && matrix.target == env.DEFAULT_TARGET }}
+      #   uses: ./.github/actions/submit_sdk
+      #   with:
+      #     catalog-url: ${{ secrets.CATALOG_URL }}
+      #     catalog-api-token: ${{ secrets.CATALOG_API_TOKEN }}
+      #     firmware-api: ${{ steps.build-fw.outputs.firmware_api }}
+      #     firmware-target: ${{ matrix.target }}
+      #     firmware-version: ${{ steps.names.outputs.suffix }}
