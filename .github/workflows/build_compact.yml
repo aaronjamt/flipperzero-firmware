@@ -42,7 +42,7 @@ jobs:
           echo "hw-target-code=$TARGET" >> $GITHUB_OUTPUT
 
       - name: Deploy uFBT with SDK
-        uses: flipperdevices/flipperzero-ufbt-action@v0.1
+        uses: flipperencore/flipperzero-ufbt-action@v0.1
         with:
           task: setup
           sdk-file: ${{ steps.build-fw.outputs.sdk-file }}
@@ -72,7 +72,7 @@ jobs:
             done
           done
 
-## Uncomment this for a single job that will run only if all targets are built successfully          
+## Uncomment this for a single job that will run only if all targets are built successfully
 #  report-status:
 #    name: Report status
 #    needs: [compact]
