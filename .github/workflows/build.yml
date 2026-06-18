@@ -78,13 +78,13 @@ jobs:
             -C build/latest resources
 
       - name: 'Copy universal artifacts'
-        if: ${{ !github.event.pull_request.head.repo.fork && matrix.target == env.DEFAULT_TARGET }}
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository && matrix.target == env.DEFAULT_TARGET }}
         run: |
           tar czpf "artifacts/flipper-z-any-scripts-${SUFFIX}.tgz" scripts
           cp build/core2_firmware.tgz "artifacts/flipper-z-any-core2_firmware-${SUFFIX}.tgz"
 
       - name: 'Upload artifacts to update server'
-        if: ${{ !github.event.pull_request.head.repo.fork }}
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           FILES=$(for ARTIFACT in $(find artifacts -maxdepth 1 -not -type d); do echo "-F files=@${ARTIFACT}"; done)
           curl --fail -L -H "Token: ${{ secrets.INDEXER_TOKEN }}" \
@@ -94,7 +94,7 @@ jobs:
               "${{ secrets.INDEXER_URL }}"/firmware/uploadfiles
 
       - name: 'Find previous comment'
-        if: ${{ !github.event.pull_request.head.repo.fork && matrix.target == env.DEFAULT_TARGET && github.event.pull_request }}
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository && matrix.target == env.DEFAULT_TARGET && github.event.pull_request }}
         uses: peter-evans/find-comment@v3
         id: find-comment
         with:
@@ -103,7 +103,7 @@ jobs:
           body-includes: 'Compiled ${{ matrix.target }} firmware for commit'
 
       - name: 'Create or update comment'
-        if: ${{ !github.event.pull_request.head.repo.fork && matrix.target == env.DEFAULT_TARGET && github.event.pull_request }}
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository && matrix.target == env.DEFAULT_TARGET && github.event.pull_request }}
         uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
