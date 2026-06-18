@@ -1,6 +1,7 @@
 # Encore Firmware for Flipper Zero
 
-This project is not affiliated with Flipper Devices. Encore is the community's answer to Flipper Devices abandoning Flipper Zero.
+This project is not affiliated with Flipper Devices. Encore is the community's answer to [Flipper Devices abandoning Flipper Zero](https://spicemesh.de/posts/open-call-to-flipper/).
+
 We aim to unofficially replace the official firmware, becoming an updated basis for users to use, app developers to target, and custom firmwares to base off of.
 
 We plan to have updated forks, with new features and fixes, of:
@@ -11,11 +12,13 @@ We plan to have updated forks, with new features and fixes, of:
 - Flipper App Catalog
 - Flipper JS SDK
 - Flipper Docs and Developer Docs
+
 while removing all reliance on Flipper Devices.
 
 Encore will not be a traditional "custom firmware", it just aims to be an updated version of official firmware without many frills and distractions, just good and stable updates without re-inventing the wheel - like the official firmware would've continued to be if it wasn't abandoned.
 
-These plans are ambitious and will require time to reach, but we are determined to do what Flipper Devices have proven unable and/or uninterested to do.
+These plans are ambitious and will require time to reach, but we are determined to do what Flipper Devices have proven unable and/or uninterested to do.\
+<sub>Our frustration is aimed at Flipper Devices as an entity; we are extremely thankful for and admire the amazing work done by official firmware developers, it is the people in charge that we take issue with.</sub>
 
 # Contributing
 
